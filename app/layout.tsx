@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -7,8 +6,9 @@ import { Providers } from "@/components/providers/Providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Million Pixel Homepage",
-  description: "Own a piece of internet history",
+  title: "Million Pixel Homepage — milliondollarhomepage.in",
+  description:
+    "Own a piece of internet history. Buy pixels on India's Million Dollar Homepage. 1 pixel = ₹1.",
 };
 
 export default function RootLayout({

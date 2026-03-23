@@ -1,9 +1,8 @@
 // app/api/pixels/[id]/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { sql } from "@/lib/db";
+import { headers } from "next/headers";
 
 export async function PATCH(
   request: NextRequest,
@@ -11,7 +10,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -19,10 +18,8 @@ export async function PATCH(
     const body = await request.json();
     const { color, url, message, image } = body;
 
-    // Verify ownership
-    const pixel = await prisma.pixel.findUnique({
-      where: { id },
-    });
+    const pixels = await sql`SELECT * FROM pixel WHERE id = ${id}`;
+    const pixel = pixels[0];
 
     if (!pixel) {
       return NextResponse.json({ error: "Pixel not found" }, { status: 404 });
@@ -32,29 +29,24 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Update pixel
-    const updatedPixel = await prisma.pixel.update({
-      where: { id },
-      data: {
-        color: color || pixel.color,
-        url: url !== undefined ? url : pixel.url,
-        message: message !== undefined ? message : pixel.message,
-        image: image !== undefined ? image : pixel.image,
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const updated = await sql`
+      UPDATE pixel SET
+        color = ${color ?? pixel.color},
+        url = ${url !== undefined ? url : pixel.url},
+        message = ${message !== undefined ? message : pixel.message},
+        image = ${image !== undefined ? image : pixel.image},
+        "updatedAt" = now()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+
+    const updatedPixel = updated[0];
+    const ownerRows = await sql`SELECT id, name, email FROM "user" WHERE id = ${session.user.id}`;
+    const owner = ownerRows[0];
 
     return NextResponse.json({
-      success: true,
-      pixel: updatedPixel,
+      ...updatedPixel,
+      owner,
     });
   } catch (error) {
     console.error("Error updating pixel:", error);

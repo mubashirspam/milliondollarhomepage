@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Github, Twitter } from "lucide-react";
+import { X } from "lucide-react";
 import { useUIStore } from "@/lib/store";
 
 export function DevInfoModal() {
@@ -24,12 +24,11 @@ export function DevInfoModal() {
 
         <div className="prose prose-sm text-gray-600 mb-6">
           <p>
-            The Million Pixel Homepage is a modern reimplementation of the
-            classic concept, built with the latest web technologies.
+            India&apos;s Million Pixel Homepage — own a piece of internet history for just ₹1 per pixel.
           </p>
           <p>
-            Buy pixels, set your color and URL, and become a part of internet
-            history.
+            Buy pixels, set your color, add a redirect URL, upload your logo,
+            and leave your mark on milliondollarhomepage.in.
           </p>
 
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -37,10 +36,6 @@ export function DevInfoModal() {
               How to Select Pixels:
             </h3>
             <ul className="text-xs text-blue-800 space-y-1 list-disc pl-4">
-              <li>
-                <strong>Single Pixel:</strong> Click on any pixel to add it to
-                cart
-              </li>
               <li>
                 <strong>Area Selection:</strong> Hold{" "}
                 <kbd className="px-1 py-0.5 bg-white border border-blue-300 rounded text-blue-900 font-mono text-[10px]">
@@ -54,33 +49,15 @@ export function DevInfoModal() {
               <li>
                 <strong>Zoom:</strong> Use mouse wheel to zoom in/out
               </li>
+              <li>
+                <strong>View Details:</strong> Click any pixel to see info
+              </li>
             </ul>
           </div>
         </div>
 
-        <div className="space-y-3">
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full py-3 bg-gray-900 text-white rounded-lg font-bold hover:bg-black transition"
-          >
-            <Github className="w-5 h-5" />
-            View Source
-          </a>
-          <a
-            href="https://twitter.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition"
-          >
-            <Twitter className="w-5 h-5" />
-            Follow Developer
-          </a>
-        </div>
-
-        <div className="mt-6 text-center text-xs text-gray-400">
-          Built with Next.js 14, Prisma, Stripe & Tailwind
+        <div className="mt-4 text-center text-xs text-gray-400">
+          Built with Next.js · Neon DB · Better Auth · Razorpay
         </div>
       </div>
     </div>

@@ -2,15 +2,15 @@
 
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Code, Home } from "lucide-react";
+import { ShoppingCart, Code, Home, LayoutGrid } from "lucide-react";
 import { useCartStore, useUIStore, usePixelStore } from "@/lib/store";
 import { formatNumber } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
 
 export function Header() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const getTotalPixels = useCartStore((state) => state.getTotalPixels);
   const pixels = usePixelStore((state) => state.pixels);
   const openModal = useUIStore((state) => state.openModal);
@@ -50,7 +50,7 @@ export function Header() {
           {/* Auth Section */}
           {session ? (
             <button
-              onClick={() => signOut()}
+              onClick={() => authClient.signOut()}
               className="flex items-center gap-2 hover:bg-gray-100 p-1 rounded pr-2 transition cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold border border-indigo-200">
@@ -69,6 +69,17 @@ export function Header() {
               className="text-sm font-bold text-gray-600 hover:text-indigo-600 px-3 py-1.5 rounded hover:bg-gray-100 transition"
             >
               Sign In
+            </button>
+          )}
+
+          {/* My Pixels (only when logged in) */}
+          {session && (
+            <button
+              onClick={() => router.push("/my-pixels")}
+              className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+              title="My Pixels"
+            >
+              <LayoutGrid className="w-5 h-5" />
             </button>
           )}
 

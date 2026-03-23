@@ -26,10 +26,11 @@ export interface User {
 export interface Purchase {
   id: string;
   userId: string;
-  amount: number;
+  amount: number; // in paise
   pixelCount: number;
   status: "pending" | "completed" | "failed";
-  stripeSessionId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId?: string | null;
   metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
@@ -94,4 +95,11 @@ export interface BoundingBox {
   maxX: number;
   minY: number;
   maxY: number;
+}
+
+export interface RazorpayOrderResponse {
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
 }

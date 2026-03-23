@@ -4,6 +4,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { usePixelStore } from "@/lib/store";
 import { HomeHeader } from "./HomeHeader";
 import { HomeCanvas } from "./HomeCanvas";
@@ -47,11 +48,11 @@ export function Home() {
       <div className="bg-white py-3 md:py-4 border-t-2 border-gray-200">
         <div className="w-full px-2 md:px-4">
           <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-[10px] md:text-xs text-gray-600">
-            <span>💰 $1 per pixel</span>
+            <Link href="/terms" className="hover:text-indigo-600 transition-colors">Terms</Link>
             <span className="hidden sm:inline">•</span>
-            <span>🎨 Customize</span>
+            <Link href="/refund" className="hover:text-indigo-600 transition-colors">Refund</Link>
             <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline">🌍 Be part of history</span>
+            <Link href="/privacy" className="hover:text-indigo-600 transition-colors">Privacy</Link>
             <span className="hidden sm:inline">•</span>
             <button
               onClick={() => router.push("/buy")}

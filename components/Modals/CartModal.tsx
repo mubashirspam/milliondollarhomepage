@@ -2,13 +2,38 @@
 
 "use client";
 
+import { useState } from "react";
 import { X, Trash2 } from "lucide-react";
 import { useCartStore, useUIStore } from "@/lib/store";
 import { formatCurrency, PIXEL_PRICE } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay: new (options: Record<string, any>) => { open: () => void };
+  }
+}
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (document.getElementById("razorpay-script")) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "razorpay-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export function CartModal() {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
+  const [isLoading, setIsLoading] = useState(false);
+
   const activeModal = useUIStore((state) => state.activeModal);
   const closeModal = useUIStore((state) => state.closeModal);
   const openModal = useUIStore((state) => state.openModal);
@@ -16,7 +41,9 @@ export function CartModal() {
 
   const areas = useCartStore((state) => state.areas);
   const removeArea = useCartStore((state) => state.removeArea);
+  const clearCart = useCartStore((state) => state.clearCart);
   const getTotalPixels = useCartStore((state) => state.getTotalPixels);
+  const getPixelsInAreas = useCartStore((state) => state.getPixelsInAreas);
 
   if (activeModal !== "cart") return null;
 
@@ -31,30 +58,90 @@ export function CartModal() {
       return;
     }
 
-    // Disable purchasing for now
-    addToast("Purchasing is currently disabled", "info");
-    return;
+    setIsLoading(true);
 
-    /* 
     try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ areas }),
+      // Build pixel list from areas
+      const pixelSet = getPixelsInAreas();
+      const pixels = Array.from(pixelSet).map((key) => {
+        const [x, y] = key.split(",").map(Number);
+        return { x, y };
       });
 
-      const data = await response.json();
+      // Create Razorpay order
+      const res = await fetch("/api/razorpay/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pixels }),
+      });
 
-      if (data.success && data.url) {
-        window.location.href = data.url;
-      } else {
-        addToast("Failed to create checkout session", "error");
+      const orderData = await res.json();
+      if (!orderData.success) {
+        addToast(orderData.error || "Failed to create order", "error");
+        setIsLoading(false);
+        return;
       }
+
+      // Load Razorpay script
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        addToast("Failed to load payment gateway", "error");
+        setIsLoading(false);
+        return;
+      }
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Million Pixel Homepage",
+        description: `Purchase ${pixels.length} pixel${pixels.length > 1 ? "s" : ""} on milliondollarhomepage.in`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: session.user.name || "",
+          email: session.user.email || "",
+        },
+        theme: { color: "#4F46E5" },
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            const verifyRes = await fetch("/api/razorpay/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              addToast(verifyData.message || "Purchase successful!", "success");
+              clearCart();
+              closeModal();
+              window.location.href = "/my-pixels?purchased=true";
+            } else {
+              addToast(verifyData.error || "Payment verification failed", "error");
+            }
+          } catch {
+            addToast("Payment verification failed", "error");
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setIsLoading(false);
+          },
+        },
+      };
+
+      closeModal();
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (error) {
       console.error("Checkout error:", error);
-      addToast("An error occurred", "error");
+      addToast("An error occurred during checkout", "error");
+    } finally {
+      setIsLoading(false);
     }
-    */
   }
 
   return (
@@ -135,16 +222,20 @@ export function CartModal() {
             <span className="text-gray-500">Areas selected:</span>
             <span className="font-bold">{areas.length}</span>
           </div>
+          <div className="flex justify-between text-sm text-gray-500">
+            <span>Price per pixel:</span>
+            <span className="font-bold text-gray-700">₹1</span>
+          </div>
           <div className="flex justify-between text-lg font-bold text-gray-800">
             <span>Total:</span>
             <span>{formatCurrency(total)}</span>
           </div>
           <button
             onClick={handleCheckout}
-            disabled={areas.length === 0}
+            disabled={areas.length === 0 || isLoading}
             className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Proceed to Checkout
+            {isLoading ? "Creating Order..." : "Proceed to Checkout"}
           </button>
         </div>
       </div>

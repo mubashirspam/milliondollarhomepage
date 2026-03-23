@@ -10,17 +10,18 @@ export function cn(...inputs: ClassValue[]) {
 export const GRID_SIZE = 1000;
 export const PIXEL_SIZE = 10;
 export const TOTAL_PIXELS = GRID_SIZE * GRID_SIZE;
-export const PIXEL_PRICE = 100; // cents
+export const PIXEL_PRICE = 100; // paise (₹1 = 100 paise)
 
-export function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(paise: number): string {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(paise / 100);
 }
 
 export function formatNumber(num: number): string {
-  return new Intl.NumberFormat("en-US").format(num);
+  return new Intl.NumberFormat("en-IN").format(num);
 }
 
 export function randomColor(): string {

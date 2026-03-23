@@ -25,8 +25,8 @@ export function HomeHeader() {
                 The Million Pixel Homepage
               </h1>
               <p className="text-[10px] md:text-xs text-yellow-200 hidden sm:block truncate">
-                Own a piece of internet history! • 1,000,000 pixels • $1 per
-                pixel
+                Own a piece of internet history! • 1,000,000 pixels • ₹1 per
+                pixel — India&apos;s own!
               </p>
             </div>
           </div>

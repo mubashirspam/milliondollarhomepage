@@ -2,10 +2,10 @@
 
 import { usePixelStore, useUIStore } from "@/lib/store";
 import { X, ExternalLink } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 
 export function Sidebar() {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const open = useUIStore((state) => state.sidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
   const selectedPixel = usePixelStore((state) => state.selectedPixel);
@@ -59,7 +59,7 @@ export function Sidebar() {
                 }`}
               />
               <p className="font-medium text-gray-700">
-                {isSold ? "Sold" : "Available"}
+                {isSold ? "Sold" : "Available — ₹1"}
               </p>
             </div>
           </div>
@@ -107,7 +107,7 @@ export function Sidebar() {
             <div className="pt-4 border-t border-gray-100">
               <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-center">
                 <p className="text-sm text-indigo-700 font-medium mb-2">
-                  Available for purchase
+                  Available for ₹1
                 </p>
                 <p className="text-xs text-gray-600">
                   Hold{" "}
