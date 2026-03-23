@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { headers } from "next/headers";
 
+export const dynamic = "force-dynamic";
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
