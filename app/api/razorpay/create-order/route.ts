@@ -23,19 +23,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if any pixels are already taken
     const pixelCoords = pixels as { x: number; y: number }[];
+
+    // Check if any pixels are already sold
     for (const p of pixelCoords) {
-      const existing = await sql`SELECT id FROM pixel WHERE x = ${p.x} AND y = ${p.y}`;
+      const existing =
+        await sql`SELECT id FROM pixel WHERE x = ${p.x} AND y = ${p.y}`;
       if (existing.length > 0) {
         return NextResponse.json(
-          { error: `Pixel (${p.x}, ${p.y}) is already taken` },
+          { error: `Pixel (${p.x}, ${p.y}) is already purchased` },
           { status: 409 }
         );
       }
     }
 
-    const amountInPaise = pixels.length * PIXEL_PRICE; // ₹1 per pixel = 100 paise
+    // Check if any pixels are in a pending order (reserved)
+    const pendingPurchases = await sql`
+      SELECT metadata FROM purchase
+      WHERE status = 'pending'
+        AND "createdAt" > now() - interval '1 hour'
+    `;
+
+    const reservedSet = new Set<string>();
+    for (const purchase of pendingPurchases) {
+      try {
+        const meta =
+          typeof purchase.metadata === "string"
+            ? JSON.parse(purchase.metadata)
+            : purchase.metadata;
+        if (Array.isArray(meta?.pixels)) {
+          for (const p of meta.pixels as { x: number; y: number }[]) {
+            reservedSet.add(`${p.x},${p.y}`);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    for (const p of pixelCoords) {
+      if (reservedSet.has(`${p.x},${p.y}`)) {
+        return NextResponse.json(
+          { error: `Pixel (${p.x}, ${p.y}) is currently reserved by another order` },
+          { status: 409 }
+        );
+      }
+    }
+
+    const amountInPaise = pixels.length * PIXEL_PRICE;
 
     // Create Razorpay order
     const order = await razorpay.orders.create({

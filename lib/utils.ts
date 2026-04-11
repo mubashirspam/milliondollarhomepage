@@ -12,6 +12,11 @@ export const PIXEL_SIZE = 10;
 export const TOTAL_PIXELS = GRID_SIZE * GRID_SIZE;
 export const PIXEL_PRICE = 100; // paise (₹1 = 100 paise)
 
+// Block system: each block is 10×10 pixels = 100 pixels = ₹100
+export const BLOCK_SIZE = 10; // pixels per block dimension
+export const BLOCK_COUNT = GRID_SIZE / BLOCK_SIZE; // 100 blocks per dimension
+export const BLOCK_PRICE = BLOCK_SIZE * BLOCK_SIZE * PIXEL_PRICE; // 10000 paise = ₹100
+
 export function formatCurrency(paise: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",

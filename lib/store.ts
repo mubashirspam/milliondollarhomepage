@@ -1,23 +1,26 @@
 // lib/store.ts
 
 import { create } from "zustand";
-import { Pixel, ViewportState, CartItem, Toast } from "@/types";
-import { generatePixelKey } from "./utils";
+import { Pixel, ViewportState, Toast } from "@/types";
+import { generatePixelKey, BLOCK_SIZE } from "./utils";
 
 interface PixelStore {
   pixels: Map<string, Pixel>;
   selectedPixel: { x: number; y: number } | null;
+  reservedPixels: Set<string>; // "x,y" — pixels locked by pending orders
   setPixels: (pixels: Pixel[]) => void;
   addPixel: (pixel: Pixel) => void;
   updatePixel: (pixel: Pixel) => void;
   selectPixel: (x: number, y: number) => void;
   deselectPixel: () => void;
   getPixelByCoord: (x: number, y: number) => Pixel | undefined;
+  setReservedPixels: (pixels: { x: number; y: number }[]) => void;
 }
 
 export const usePixelStore = create<PixelStore>((set, get) => ({
   pixels: new Map(),
   selectedPixel: null,
+  reservedPixels: new Set<string>(),
 
   setPixels: (pixels) => {
     const pixelMap = new Map<string, Pixel>();
@@ -53,6 +56,11 @@ export const usePixelStore = create<PixelStore>((set, get) => ({
   getPixelByCoord: (x, y) => {
     const key = generatePixelKey(x, y);
     return get().pixels.get(key);
+  },
+
+  setReservedPixels: (pixels) => {
+    const pixelSet = new Set<string>(pixels.map((p) => generatePixelKey(p.x, p.y)));
+    set({ reservedPixels: pixelSet });
   },
 }));
 
@@ -279,4 +287,50 @@ export const useUIStore = create<UIStore>((set, get) => ({
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
     })),
+}));
+
+// Block selection store — one block = 10×10 pixels = 100 pixels
+interface BlockSelectionStore {
+  selectedBlocks: Set<string>; // "bx,by" block coordinates
+  toggleBlock: (bx: number, by: number) => void;
+  clearSelection: () => void;
+  isSelected: (bx: number, by: number) => boolean;
+  getSelectedCount: () => number;
+  getSelectedPixels: () => { x: number; y: number }[];
+}
+
+export const useBlockSelectionStore = create<BlockSelectionStore>((set, get) => ({
+  selectedBlocks: new Set<string>(),
+
+  toggleBlock: (bx, by) => {
+    const key = `${bx},${by}`;
+    set((state) => {
+      const next = new Set(state.selectedBlocks);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return { selectedBlocks: next };
+    });
+  },
+
+  clearSelection: () => set({ selectedBlocks: new Set<string>() }),
+
+  isSelected: (bx, by) => get().selectedBlocks.has(`${bx},${by}`),
+
+  getSelectedCount: () => get().selectedBlocks.size,
+
+  getSelectedPixels: () => {
+    const pixels: { x: number; y: number }[] = [];
+    get().selectedBlocks.forEach((key) => {
+      const [bx, by] = key.split(",").map(Number);
+      for (let dx = 0; dx < BLOCK_SIZE; dx++) {
+        for (let dy = 0; dy < BLOCK_SIZE; dy++) {
+          pixels.push({ x: bx * BLOCK_SIZE + dx, y: by * BLOCK_SIZE + dy });
+        }
+      }
+    });
+    return pixels;
+  },
 }));

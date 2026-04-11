@@ -48,9 +48,32 @@ export async function GET(request: NextRequest) {
       updatedAt: p.updatedAt,
     }));
 
+    // Fetch pending pixels from active orders (reserved within the last hour)
+    const pendingPurchases = await sql`
+      SELECT metadata FROM purchase
+      WHERE status = 'pending'
+        AND "createdAt" > now() - interval '1 hour'
+    `;
+
+    const pendingPixels: { x: number; y: number }[] = [];
+    for (const purchase of pendingPurchases) {
+      try {
+        const meta =
+          typeof purchase.metadata === "string"
+            ? JSON.parse(purchase.metadata)
+            : purchase.metadata;
+        if (Array.isArray(meta?.pixels)) {
+          pendingPixels.push(...(meta.pixels as { x: number; y: number }[]));
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+
     return NextResponse.json({
       success: true,
       pixels: formatted,
+      pendingPixels,
       total: formatted.length,
     });
   } catch (error) {
